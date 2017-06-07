@@ -1,0 +1,423 @@
+---
+title: "Gender Wage Differences"
+author: "Lily Li"
+date: "12/14/2016"
+geometry: margin = .75in
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(pander)
+library(stargazer)
+load("exploratory.RData")
+```
+
+# Basic Information 
+Reference Variables:  
+- *year*: calendar year, ranging from 2004 to 2008  
+- *age*: age in the reference year, ranging from 22 to 59  
+- *educ*: years of education, which can be 4, 6, 9, 12, 16  
+- *female*: 1 if female, 0 if male  
+- *y*: log real hourly wage (after taxes, measured in Euros/hour) on the job in the reference year  
+- *va*: log of output per worker at the employer in the reference year (thousands of euros per person)  
+
+
+# Data Characteristics  
+- 15,058 males
+- 8,086 females
+  
+## Figure 1A
+```{r echo = FALSE, fig.align='center', fig.width = 4.5, fig.height = 3}
+hist_age
+```
+The distribution of age is right skewed with the largest concentration of people around age 30. We should take into account that the findings of this paper will be focused on workers who are at the beginning to middle of their careers.   
+
+## Table 1A: Summary of Mean Characteristics for the Reference Period
+```{r echo = FALSE, fig.cap = 'Table 1'}
+rownames(summary_table) = c("Education", "Age", "Log Wage", "Productivity")
+pander(summary_table)
+```
+There are significant differences in means of education, wage, and productivity between females and males, based on the large t-stats.  
+
+
+## Table 1B: Fractions of each Education Group for each Gender
+```{r echo = FALSE}
+pander(summary_table2)
+```
+
+## Figure 1B
+```{r echo = FALSE, fig.align='center', fig.width = 4.5, fig.height = 3}
+bar_gender_educ
+```
+
+Looking at the distribution of education for women, the largest concentration is at 28% at 12 years of education, (high school), followed by 6 years of education (elementary) and 9 years of education (middle school). On the other hand, the largest concentration for men is at 6 years of education. Roughly only ~ 9.7% of men in our sample are college educated while it is ~ 12.1% for women in our sample. Looking at the plot of Figure 1B, we can see that the distribution for men is slightly right skewed where as for women it doesn't seem to be skewed. Neither groups have normal distribution but a higher proportion of women hold higher degrees such as high school and college. 
+
+## Table 1C: Log Hourly Wage
+```{r echo = FALSE}
+colnames(f_wage_summary) = "Female Log Hourly Wage"
+colnames(m_wage_summary) = "Male Log Hourly Wage"
+pander(cbind(f_wage_summary, m_wage_summary))
+```
+
+## Figure 1C
+```{r echo = FALSE, fig.align='center', fig.width = 4.5, fig.height = 3}
+hist_wage
+```
+  
+In terms of wage, we observe that men have higher max, mean, and min log hourly wage compared to women. The distribution shape looks similar for both groups but for men, it is slightly shifted to the right, meaning the same proportion of men are in each wage bin but overall, men in each bin make more than their female counter parts.   
+
+## Table 1D: Productivity
+```{r echo = FALSE, fig.align='center'}
+colnames(f_prod_summary) = "Female Productivity"
+colnames(m_prod_summary) = "Male Productivity"
+pander(cbind(f_prod_summary, m_prod_summary))
+```
+
+## Figure 1D
+```{r echo = FALSE, fig.align='center', fig.width = 4.5, fig.height = 3}
+hist_prod
+```
+In terms of productivity of firms, both groups have similar min, mean, and max. Although they have similar min, mean, max, and shape of distribution, the distribution of firm productivity for males is slightly more concentrated on the right side than females, meaning there are more men working at firms with higher productivity than women. 
+
+
+# Regression of Wage on Gender and Age  
+```{r echo = FALSE}
+load("s-regressions.RData")
+```
+- S1: wage on female dummy
+- S2: wage on education, age, age-squared, age-cubed, female dummy
+- S3: male wage on education, age, age-squared, age-cubed
+- S4: female wage on education, age, age-squared, age-cubed
+
+## Table 2A
+```{r echo = FALSE, results = "asis", message = FALSE}
+stargazer(s1, s2, s3, s4,
+          covariate.labels=c("Education", "Female", "Age", "Age Squared", "Age Cubed"),
+          column.labels = c("Pooled", "Pooled (Educ, Age)", "Males", "Females"),
+          omit.stat=c("ser","f"), dep.var.labels = "Log Wage")
+```
+
+```{r echo = FALSE}
+load("s-oxaca.RData")
+```
+
+# Oxaca Decomposition - Wage on Gender and Age
+From, Table 2A, $\hat{\beta}^{1}_{female}$ from regression (1) is `r round(s1$coefficients["female"], 4)` while from regression (2), which included education, age, age squared, and age cubed, $\hat{\beta}^{2}_{female}$ is `r round(s2$coefficients["female"], 4)`. Both coefficients are negative but when other factors were added, the relationship between being female and wage increases in magnitude and becomes more negative.  
+  
+For males, $\hat{\beta}^{3}_{educ}$ is `r round(s3$coefficients["educ"], 4)` while for females $\hat{\beta}^{4}_{educ}$ is `r round(s4$coefficients["educ"], 4)`. For every 1 unit of increase in education, females are getting a slightly higher (`r round(s4$coefficients["educ"] - s3$coefficients["educ"], 4)` higher) return to log wage.  
+  
+For males, $\hat{\beta}^{3}_{age}$ is `r round(s3$coefficients["age"], 4)` and for females, $\hat{\beta}^{4}_{age}$ is `r round(s4$coefficients["age"], 4)`.  On the other hand, for every 1 year of increase in age, females are getting a slightly lower (`r round(s3$coefficients["age"] - s4$coefficients["age"], 4)` lower) return to log wage. This relationship with age remains true even for a squared and cubed age variable.    
+
+\begin{center}
+$wage = \beta^f_0 + \beta^f_1*education + \beta^f_2*age + \beta^f_3*age^2 + \beta^f_4*age^3$  
+$wage = \beta^m_0 + \beta^m_1*education + \beta^m_2*age + \beta^m_3*age^2 + \beta^m_4*age^3$  
+  
+mean female wage: $\bar{y}^{f}$ = `r round(summary_table["Log Wage", "female_means"], 4)`  
+  
+mean male wage: $\bar{y}^{m}$ = `r round(summary_table["Log Wage", "male_means"], 4)`  
+  
+mean female age: $\bar{x}^{f}$ = `r round(summary_table["Age", "female_means"], 4)`  
+  
+mean male age: $\bar{x}^{m}$ = `r round(mean_male_age, 4)`  
+  
+wage gap: $\bar{y}^{f} - \bar{y}^{m}$ = `r round(wage_gap, 4)`  
+\end{center}
+  
+Age component of gap using female coefficients:  
+\begin{center}
+$(\bar{x}^{f}_{age} - \bar{x}^{m}_{age})*\hat{\beta}^{f}_{age}$ + ... + $(\bar{x}^{f}_{age^3} - \bar{x}^{m}_{age^3})*\hat{\beta}^{f}_{age^3}$ = `r round(age_comp, 4)` 
+\end{center}
+  
+Age component of gap using male coefficients (*the difference between this and previous is beyond hte 4th decimal place):  
+\begin{center}
+$(\bar{x}^{f}_{age} - \bar{x}^{m}_{age})*\hat{\beta}^{m}_{age}$ + ... + $(\bar{x}^{f}_{age^3} - \bar{x}^{m}_{age^3})*\hat{\beta}^{m}_{age^3}$ = `r round(age_comp2, 4)`
+\end{center}
+
+Percent of wage gap explained by age differences: between `r abs(round(age_comp/wage_gap, 4))*100`% and `r abs(round(age_comp2/wage_gap, 4))*100`% 
+   
+Education component of the gap using female coefficients:  
+\begin{center}
+$(\bar{x}^{f}_{educ} - \bar{x}^{m}_{eudc})*\hat{\beta}^{f}_{educ}$ = `r round(educ_comp, 4)`
+\end{center}
+  
+Education component of the gap using male coefficients:  
+\begin{center}
+$(\bar{x}^{f}_{educ} - \bar{x}^{m}_{eudc})*\hat{\beta}^{m}_{educ}$ = `r round(educ_comp2, 4)`
+\end{center}
+  
+Percent of wage gap explained by education differences: since the components are positive it doesnt explain the negative gap
+
+
+## Figure 2  
+The graphs below show the relationships between wages and age at each education level along with their respective fitted lines.   
+  
+```{r echo = FALSE, fig.width = 4, fig.height = 2.5}
+load("s-plots.RData")
+plot1
+plot2
+plot3
+plot4
+plot5
+```
+
+# Cubic and Splines - 12 years of education
+Next, let's compare a cubic polynomial with a cubic spline function with K knots, where K=3,4,5....10. The subset of data used in this modeling is the group of females and males with 12 years of education (high school degree). A simple 2 sample cross validation was used for each gender group where the models were trained on a train sample (a random sub-sample half the size of the 12 years of education subset) and tested on a a test sample with the following mean squared errors (MSE) in figure 3. 
+```{r echo = FALSE}
+load("splines.RData")
+```
+
+## Figure 3: MSE of Spline Knots  
+```{r echo = FALSE, fig.width = 4.5, fig.height = 3, align = 'center'}
+library(png)
+library(grid)
+img <- readPNG("composite-mse-plot.png")
+grid.raster(img)
+```
+  
+## Table 2B:
+```{r echo = FALSE}
+pander(mse_table)
+```
+  
+The best knot is `r f_best_knots` for females (`r mse_table[f_best_knots, "Females"]` mse) and `r m_best_knots` for males (`r mse_table[m_best_knots, "Males"]` mse). The mse for females is much more flexible and varying for different knots than for males. 
+
+## Figure 4A  
+```{r echo = FALSE, fig.width = 4.5, fig.height = 3, align = 'center'}
+library(png)
+library(grid)
+img1 = readPNG("f_plot.png")
+grid.raster(img1)  
+```
+  
+## Figure 4B  
+```{r echo = FALSE, fig.width = 4.5, fig.height = 3, align = 'center'}
+img2 = readPNG("m_plot.png")
+grid.raster(img2)  
+```
+   
+   
+# Oxaca Decomposition - Employer Productivity
+```{r echo = FALSE}
+load("m-regressions.RData")
+```
+- M1: wage on education, age, age-squared, age-cubed, female dummy
+- M2: wage on education, age, age-squared, age-cubed, female dummy, va (firm productivity)
+- M3: male wage on education, age, age-squared, age-cubed, va (firm productivity)
+- M4: female wage on education, age, age-squared, age-cubed, va (firm productivity)
+
+# Table 3  
+```{r echo = FALSE, results = 'asis'}
+stargazer(m1, m2, m3, m4,
+          covariate.labels = c("Education", "Female", "Age", 
+                               "Age Squared", "Age Cubed", "Productivity"),
+          column.labels = c("Pooled", "Pooled (Prod.)", "Males", "Females"),
+          omit.stat=c("ser","f"), dep.var.labels = "Log Wage")
+```
+
+Begin by comparing models M1 and M2. How much of the gender gap is "explained" by the fact that women work at less productive firms?
+```{r echo = FALSE}
+load("m-oxaca.RData")
+load("m-oxaca2.RData")
+```
+
+**Pooled Regressions Models (Table 3: 1 and 2)**  
+From M1 (regression (1)) and M2 (regression (2)), the coefficient of the female variable is `r round(m1$coefficients["female"], 4)` and `r round(m2$coefficients["female"], 4)`, respectively. This means that the relationship between being female and wage differs by `r round(m1$coefficients["female"], 4) - round(m2$coefficients["female"], 4)` after taking firm productivity into account.
+  
+$(\bar{x}^{m1}_{prod} - \bar{x}^{m2}_{prod})*\hat{\beta}^{m2}_{prod}$ = `r round(prod_comp, 4)`  
+  
+The productivity component of the gender wage gap is `r round(prod_comp, 4)`, a `r round(prod_effect, 4)*100`%.
+
+The estimated effect of productivity on wages is `r round(m2$coefficients["va"], 4)`, meaning for every 1 unit increase in log productivity, there is a `r round(m2$coefficients["va"], 4)` increase in log wage.  
+  
+In a causal model, if more productive employers (with higher values of va) hire workers who have higher productivity, the firm's productivity will increase and so will the returns to workers' wages because of the positive relationship between va and wage. The OLS coefficient of productivity of firm overestimates the true coefficient because it's confounding the true value with the causal effect cycle described above. 
+
+**Gender Separated Models (Table 3: 3 and 4)**  
+The coefficient of productivity for females is `r round(m4$coefficients["va"], 4)` while for males it is `r round(m3$coefficients["va"], 4)`. As speculated, working at a more productive firm has a smaller effect for females. 
+
+The component of the gender wage gap explained by differences in firm productivity:  
+using males' coefficient of firm productivity: $(\bar{x}^{f}_{prod} - \bar{x}^{m}_{prod})*\hat{\beta}^{m}_{prod}$ = `r round(prod_comp2, 4)`    
+percentage: `r round(prod_effect2, 3)`%  
+  
+using females' coefficient of firm productivity: $(\bar{x}^{f}_{prod} - \bar{x}^{m}_{prod})*\hat{\beta}^{f}_{prod}$ = `r round(prod_comp3, 4)`  
+percentage: `r round(prod_effect3, 3)`%  
+  
+Between `r round(prod_effect3, 3)`% and `r round(prod_effect2, 3)`% of the wage gap is explained b the differences in firm productivity. 
+  
+The difference in coefficients: returns to productivity  
+$\bar{x}^{f}_{prod}*(\hat{\beta}^{f}_{prod} - \hat{\beta}^{m}_{prod})$ = `r round(diff_returns_prod, 4)`
+  
+After renormalizing (subtract all values of va (productiviy) by the lowest value), the difference in coefficients component becomes `r round(diff_returns_prod_norm, 4)`, less than half of the un-normalized difference in coefficients component of the gender wage gap.   
+
+# Job Changers  
+```{r echo = FALSE}
+load("c-regressions.RData")
+```
+- Model C1: wage on age, age-squared, and dva = va - va_previous (the change in va between the employer in period -1 and the employer in period 0)
+- Model C2: wage on age, age-squared, female dummy, dva
+- Model C3: male wage on age, age-squared, dva
+- Model C4: female wage on age, age-squared, dva   
+  
+## Table 4
+```{r echo = FALSE, results= 'asis'}
+stargazer(c1, c2, c3, c4,
+          covariate.labels = c("Age", "Age Squared", "Female", "Change in Productivity"),
+          column.labels = c("Pooled", "Pooled (Gender)", "Males", "Females"),
+          omit.stat=c("ser","f"), dep.var.labels = "Log Wage")
+```
+The estimated coefficients of change in productivity are all less than 0.10, much smaller than effect estimated in the regressions in Table 3. This difference is due to the fact that in this table of models, we are using change in productivity (dva) instead of absolute productivity (va) to better capture the true differences. 
+
+In both table 3 and table 4's gender separated regressions, effect of va (or dva) is smaller for female workers than male workers. Female workers seem to benefit less than male workers from working at more productive firms. A possible explanation could be that the positions female workers take up are not as impacted by the firms' productivity.  
+
+# Productivity Quartiles  
+In these figures we are going to conduct event studies of wages as workers move between different groups of employers.  
+More variables:  
+- *yl1* = wage one year before the reference year ("l1" means "lag once") so this is the wage the person had at their old job, one year before the change  
+- *yl2* = wage two years before the reference year ("l2" means "lag twice")  
+- *yp1* = wage one year after the reference year ("p1" means "plus 1") so this is the wage on the new job, one year after the change  
+- *va_previous* = log of output per worker at the previous employer (i.e., for the job held for the two years before the move)  
+- *year_previous* = year-1  
+
+```{r echo = FALSE}
+load("quartiles.RData")
+load("quartiles-graphs.RData")
+```
+
+## Table 5A  
+Columns 1 and 2 are value of log productivity for the employers in period -1. Columns 3 and 4 are the value of log productivity at the set of employers where sample members worked in period 0. Columns 5 and 6 show the changes in the specified quartile between period -1 and period 0.    
+```{r echo = FALSE}
+pander(combined_quartile_table)
+```
+  
+In period -1, the largest concentration of females is in quartile 1 while for males, it is in quartile 4 (followed closely by quartile 2). At period 0, we observe a negative change in quartile 3 and 4 for women. There was a greater outflow than inflow of women for the top productive companies, shifting the distribution of women to an even more concentrated lower quartiles. However, for men, there was a shift to higher quartiles. Quartile 3 showed negative net change but it is very small compared to women's quartile 3 change. Also for men, there's a small but sizable decrease for quartile 1. Overall, the distribution for women shifted down while the distribution of men re-shuffled and shifted slightly up.  
+
+  
+  
+\pagebreak  
+
+  
+If employer productivity has a positive causal effect on wages, we expect to see the first graphs (moving to Q1) to show a negative slope for all origins except Q1, which should stay constant. This should be the case for each graph where quartiles higher than the ending quartile should move down and quartiles lower than the ending quartile should move up. For example, origin of Q1, Q2, and Q3 moving to Q4 should show increases.   
+  
+## Figure 5, 6
+```{r echo = FALSE, fig.width = 4, fig.height = 2.5}
+op = par()
+par(mfrow=c(2,4))
+m_to1_graph
+f_to1_graph
+m_to2_graph
+f_to2_graph
+m_to3_graph
+f_to3_graph
+m_to4_graph
+f_to4_graph
+```
+
+```{r echo = FALSE, include = FALSE}
+dev.off()
+```
+**Ending in Q1 Productive Firms**  
+For ending in Q1 productive firms, we see that is the case for both females and males except both groups' Q1's wage moved up instead of staying constant.     
+
+**Ending in Q2 Productive Firms**  
+For ending in Q2, origin Q1's wage should go up, Q2's wage should stay constant and Q3 and Q4's wages should go down. However, we see that for both females and males, Q1 and Q2's wages went up. In fact, for males, Q2's wage went up similar to Q3 and Q4's wage. For females, Q3 and Q4 from period -2 to period 1 actually switched places.   
+
+**Ending in Q3 Productive Firms**  
+For ending in Q3, we expected origin Q4's wages to go down for both groups but they are actually slightly higher than previous periods. Both groups show similar slopes in terms of wage increase for all originating groups except for a slightly steeper wage increase for male origin Q1.   
+
+**Ending in Q4 Productive Firms**  
+For ending in Q4, origin Q1 and Q2's wages seem to experience the largest increase for both groups. A weird phenomenon is seen in the females group in which on average, females who worked at a more productive firm (Q2) had higher wages in period -2 than females who worked at less productive firms (Q1) and when they moved to very productive firms (Q4), the Q2's wages ended up being lower than the Q1's wages. This could be explained if certain individuals who worked at less productive firms had very high wage and thus pulled the mean wage up for that period and quartile.   
+
+Overall, moving to Q3 and Q4 firms show increases in wage for all origins for both groups. But for moving to Q1 and Q2, there is not a clear pattern. For moving to Q2, the only origins that showed decreases were Q4's for both genders. For females, the origin Q2 seems to be the least flexible in terms of reacting to moving to another quartile. In all cases, this quartile only slightly increase or decrease, staying almost constant in every graph. On the other hand, Q1 is the most flexible for females and it always increases even if moving to the same quartile. Its counterpart for males (origin Q1 males), however, shows even more flexibility as it almost always shows a steeper slope than females.    
+  
+  
+# Placebo Test  
+Here, we want to investigate if the observed quartile changes are actually due to the factor of switching jobs that are in different quartiles.  
+  
+More variables:  
+- *dy_pre* = y - yl1 = change in wages from 2 years before to 1 year before the reference year  
+- *dy_post* = yp1 - y = change in wages from reference year to reference year + 1    
+  
+  
+## Figure 7  
+The first 2 columns are regressions on the subset of people who didn't switch to a different quartile (firm productivity). The "Pre" regressions are change in wage in the old job on age and productivity while the "Post" regressions are change in wage in the new job on age and productivity. The first table shows the regressions for males while the second table shows the regressions for females. 
+```{r echo = FALSE}
+load("p-regression.RData")
+```
+
+```{r echo = FALSE, results= 'asis'}
+stargazer(p1a, p1b, p1c, p1d,
+          covariate.labels = c("Age", "Age Squared", "Change in Productivity"),
+          column.labels = c("No Change Pre", "No Change Post", "Pre", "Post"),
+          omit.stat=c("ser","f"), dep.var.caption = "Male Wages")
+```
+
+```{r echo = FALSE, results= 'asis'}
+stargazer(p2a, p2b, p2c, p2d,
+          covariate.labels = c("Age", "Age Squared", "Change in Productivity"),
+          column.labels = c("No Change Pre", "No Change Post", "Pre", "Post"),
+          omit.stat=c("ser","f"), dep.var.caption = "Female Wages")
+```
+  
+The "no change" regressions are accounting for noise and fluctuations in wages that would've been confounded if we ran a regression on the whole sample of wage on age and productivity. If we take the post period's change in productivity coefficient and subtract off the pre period we get the following:  
+  
+## Table 5B  
+```{r echo = FALSE}
+table_change = as.data.frame(rbind(cbind((p1b$coefficients["dva"] - p1a$coefficients["dva"]),
+                     (p1d$coefficients["dva"] - p1c$coefficients["dva"])),
+                     cbind((p2b$coefficients["dva"] - p2a$coefficients["dva"]),
+                           (p2d$coefficients["dva"] - p2c$coefficients["dva"])))) 
+colnames(table_change) = c("No Change Differences", "Switched Differences") 
+rownames(table_change) = c("Males", "Females")  
+pander(table_change)
+```
+
+The female "no change difference" is actually negative because of the negative change in productivity coefficient in the above regression. It seems that a no change in employers' productivty is correlated with a negative change in the employees' wage in the new job. Looking at the second column of Table 5B, the change in changes in wage for people that moved away from their originating quartile has a much larger correlation (coefficient) with the change in changes in productivity (both females and males). It seems that even after accounting for "noise" in wage changes, there is still an effect on wage from moving to a different level of firm productivity. (It's important to note that both groups of regressions have R squareds of less than 0.10.)  
+
+
+# Oxaca Decomposition - Causal  
+## Table 6  
+```{r echo = FALSE}
+load("new-m-oxaca.RData")
+```
+  
+```{r echo = FALSE, results = 'asis'}
+stargazer(m3, m4, new_m3, new_m4,
+          covariate.labels = c("Education", "Age", "Age Squared", "Productivity"),
+          column.labels = c("m3 Males", "m4 Females", "Males", "Females"),
+          omit.stat=c("ser","f"), dep.var.labels = "Log Wage")
+```
+  
+**Differences in the mean value of va for males versus females**   
+Productivity component of wage gap for males: `r round(new_male_prod_comp, 4)`   
+Percentage: `r round(new_male_prod_effect, 4)*100`%  
+
+Productivity component of wage gap for females: `r round(new_female_prod_effect, 4)`  
+Percentage: `r round(new_female_prod_effect, 4)*100`%  
+  
+**Different "returns" to working at a higher productivity firm for males versus females**  
+Using the male mean: `r round(new_diff_returns_prod2, 4)`  or `r round(new_diff_returns_prod2/wage_gap*100, 2)` %  
+Using the female mean: `r round(new_diff_returns_prod, 4)` or `r round(new_diff_returns_prod/wage_gap * 100, 2)`%    
+
+\pagebreak
+  
+# Conclusion  
+Over the course of this report, we've investigated the wage gap between genders through characteristics such as educaiton levels, age, and productivity of employers. Using mean wage of the two groups, we found the wage gap to be `r wage_gap`. First, we found that the percentage of this gap explained by age differences to be between 0.63% and 0.65%, a very small amount. Then we found that education differences doesn't explain the gap.  
+  
+We then explored the effect of adding in a productivity variable to the wage regression. The relationship between being female and wage differed by -0.0533 after taking firm productivity into account.   
+  
+After adding in the productivity variable, we separated the data by gender before performing regressions again. The relationship between productivity and wage for females and males was 0.198 and 0.254, respectively. It seemed that working at a more productive firm has a smaller effect for female wage. After Oxaca decomposition, we found that between 0.195% and 0.251% of the wage gap is explained by the differences in firm productivity. We then investigated the wage gap in terms of difference in coefficients (of productivity) and found it to be -0.166. However, after renormalizing the data (because it was not on a zero scale), the component was reduced to only -0.0698.  
+
+Next, we divided the data into quartiles in terms of productivity and charted the movement of wage when they switched jobs (employers). We expected employer productivity to have a positive causal effect on wages and thus, for quartiles (old employer) higher than the ending quartile (new employer) should move down and quartiles lower than the ending quartile should move up in wage. Overall, moving to Q3 and Q4 firms show increases in wage for all origins for both groups. But for moving to Q1 andQ2, there is not a clear pattern. For moving to Q2, the only origins that showed decreases were Q4’s for both genders.  
+  
+We then devised a placebo test to take wage "noise" (changes in wage unrelated to changing employer) by regressing change in wages from 2 years before and change in wages from reference year to reference year + 1 instead of just wage or change in wage on data where individuals didn't switch productivity quartile vs. individuals who did. It seems that even after accounting for “noise” in wage changes, there isstill an effect on wage from moving to a different level of firm productivity.
+
+Lastly, we re-estimated the models in Table 3 (Employer Productivity) and found that the differences in mean value of productivity explains 8.25% (male), and 6.15% (female) of the wage gap while the different "returns"" to working at a higher productivity firm explain 31.6% to 33.7%.  
+
+
+
+
+
+
+
+
+
+
